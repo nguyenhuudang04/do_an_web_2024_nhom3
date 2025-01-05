@@ -1,0 +1,117 @@
+@model IEnumerable<web1.Models.Product>
+
+@{
+    ViewData["Title"] = "Product Management";
+}
+
+<div class="container">
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-box"></i> Product Management</h4>
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Create New Product
+            </a>
+        </div>
+        
+        <div class="card-body">
+            <!-- Filter Section -->
+            <div class="mb-4">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <select name="categoryId" class="form-select" 
+                                asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", ViewBag.SelectedCategoryId))">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-filter"></i> Filter
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Products Table -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Discount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td style="width: 100px;">
+                                    @if (item.Images != null && item.Images.Any())
+                                    {
+                                        <img src="~/images/products/@item.Images.First().ImagePath" 
+                                             class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <img src="~/images/default/no-image.png" 
+                                             class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;" />
+                                    }
+                                </td>
+                                <td>@item.Name</td>
+                                <td>@item.Category?.Name</td>
+                                <td>@item.Price.ToString("C")</td>
+                                <td>
+                                    @if (item.DiscountPercentage > 0)
+                                    {
+                                        <span class="badge bg-danger">@item.DiscountPercentage%</span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="AdminDetails" asp-route-id="@item.Id" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="bi bi-info-circle"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" 
+                                           class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .btn-group {
+            gap: 5px;
+        }
+        .table img {
+            transition: transform 0.2s;
+        }
+        .table img:hover {
+            transform: scale(1.1);
+        }
+    </style>
+} 

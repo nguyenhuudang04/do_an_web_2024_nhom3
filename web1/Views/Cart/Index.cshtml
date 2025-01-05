@@ -1,0 +1,124 @@
+@model IEnumerable<web1.Models.CartItem>
+
+@{
+    ViewData["Title"] = "Shopping Cart";
+    decimal total = Model.Sum(item => item.UnitPrice * item.Quantity);
+}
+
+<div class="container">
+    <h1>Shopping Cart</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Your cart is empty. <a asp-controller="Home" asp-action="Index">Continue shopping</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    @if (item.Product.Images.Any())
+                                    {
+                                        <img src="~/images/products/@item.Product.Images.First().ImagePath" 
+                                             class="img-thumbnail me-2" style="width: 50px;"
+                                             alt="@item.Product.Name">
+                                    }
+                                    <span>@item.Product.Name</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (item.Product.HasDiscount())
+                                {
+                                    <div>
+                                        <span class="text-decoration-line-through text-muted">
+                                            @item.Product.Price.ToString("C")
+                                        </span>
+                                        <br/>
+                                        <span class="text-danger">
+                                            @item.UnitPrice.ToString("C")
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @item.UnitPrice.ToString("C")
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <form asp-action="UpdateQuantity" method="post" class="d-flex align-items-center">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" name="quantity" value="@(item.Quantity - 1)" 
+                                                class="btn btn-outline-secondary btn-sm"
+                                                @(item.Quantity <= 1 ? "disabled" : "")>
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                        <span class="mx-2">@item.Quantity</span>
+                                        <button type="submit" name="quantity" value="@(item.Quantity + 1)" 
+                                                class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td>@((item.UnitPrice * item.Quantity).ToString("C"))</td>
+                            <td>
+                                <form asp-action="RemoveFromCart" method="post">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                        <td><strong>@total.ToString("C")</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Continue Shopping
+            </a>
+            <a asp-controller="Order" asp-action="Checkout" class="btn btn-primary">
+                <i class="bi bi-credit-card"></i> Proceed to Checkout
+            </a>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .quantity-control {
+            width: 120px;
+        }
+        .quantity-input {
+            width: 50px;
+            text-align: center;
+        }
+    </style>
+}
+

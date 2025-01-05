@@ -1,0 +1,120 @@
+@model IEnumerable<web1.Models.Product>
+
+@{
+    ViewData["Title"] = "Product Features Management";
+}
+
+<div class="container">
+    <h1>Product Features Management</h1>
+
+    <div class="mb-4">
+        <button id="extractAllBtn" class="btn btn-primary">
+            <i class="bi bi-lightning-charge"></i> Extract Features for All Products
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Images</th>
+                            <th>Features Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (product.Images.Any())
+                                        {
+                                            <img src="~/images/products/@product.Images.First().ImagePath" 
+                                                 class="img-thumbnail me-2" 
+                                                 style="width: 50px; height: 50px; object-fit: cover;" />
+                                        }
+                                        <span>@product.Name</span>
+                                    </div>
+                                </td>
+                                <td>@product.Images.Count images</td>
+                                <td>
+                                    @if (product.ProductFeatures.Any())
+                                    {
+                                        <span class="badge bg-success">Features Extracted</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">No Features</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary extract-btn" 
+                                            data-product-id="@product.Id">
+                                        <i class="bi bi-lightning-charge"></i> Extract Features
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.extract-btn').click(function() {
+                const btn = $(this);
+                const productId = btn.data('product-id');
+                btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processing...');
+
+                $.post('/ProductFeature/ExtractFeatures', { productId: productId })
+                    .done(function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                            btn.prop('disabled', false)
+                               .html('<i class="bi bi-lightning-charge"></i> Extract Features');
+                        }
+                    })
+                    .fail(function() {
+                        alert('Error processing request');
+                        btn.prop('disabled', false)
+                           .html('<i class="bi bi-lightning-charge"></i> Extract Features');
+                    });
+            });
+
+            $('#extractAllBtn').click(function() {
+                const btn = $(this);
+                if (!confirm('This will process all products. Continue?')) return;
+
+                btn.prop('disabled', true)
+                   .html('<i class="bi bi-hourglass-split"></i> Processing...');
+
+                $.post('/ProductFeature/ExtractAllFeatures')
+                    .done(function(response) {
+                        if (response.success) {
+                            alert(`Successfully processed ${response.processedCount} products`);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    })
+                    .fail(function() {
+                        alert('Error processing request');
+                    })
+                    .always(function() {
+                        btn.prop('disabled', false)
+                           .html('<i class="bi bi-lightning-charge"></i> Extract Features for All Products');
+                    });
+            });
+        });
+    </script>
+} 

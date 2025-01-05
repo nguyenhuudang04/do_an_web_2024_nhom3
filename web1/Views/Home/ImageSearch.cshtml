@@ -1,0 +1,156 @@
+@{
+    ViewData["Title"] = "Tìm kiếm bằng hình ảnh";
+}
+
+<div class="container image-search-container">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="bi bi-camera"></i> Tìm kiếm sản phẩm bằng hình ảnh</h4>
+        </div>
+        <div class="card-body">
+            <form id="imageSearchForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="imageFile" class="form-label">
+                        Tải lên hình ảnh sản phẩm bạn muốn tìm
+                    </label>
+                    <!--Nhận file từ người dùng -->
+                    <input type="file" class="form-control" id="imageFile" name="imageFile" 
+                           accept="image/*" required>
+                    <div class="form-text">
+                        Hỗ trợ định dạng: JPG, PNG. Kích thước tối đa: 5MB
+                    </div>
+                  
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Tìm kiếm
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="searchResults" class="mt-4" style="display: none;">
+        <h5 class="mb-3">Kết quả tìm kiếm:</h5>
+        <div class="row" id="resultsContainer">
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#imageSearchForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var formData = new FormData();
+                //Truy cập input file với ID imageFile để lấy file người dùng đã chọn.
+                var fileInput = $('#imageFile')[0];
+                //Thêm file vào đối tượng FormData với tên là imageFile. Tên này sẽ được server nhận diện.
+                formData.append('imageFile', fileInput.files[0]);
+                //. Ẩn khu vực kết quả trước khi gửi AJAX
+                $('#searchResults').hide();
+                
+                $.ajax({
+                    url: '/api/ImageSearch/search',
+                    type: 'POST',
+                    data: formData,
+                    //Cần thiết khi gửi file bằng FormData để AJAX không tự động chuyển đổi dữ liệu thành chuỗi query.
+                    processData: false,
+                    contentType: false,
+                    success: function(results) {
+                        showResults(results);
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error processing image search: ' + error);
+                    }
+                });
+            });
+            d
+            function showResults(results) {
+                var container = $('#resultsContainer');
+                container.empty();
+
+                if (results.length === 0) {
+                    container.append('<div class="col-12"><div class="alert alert-info">Không tìm thấy sản phẩm tương tự.</div></div>');
+                    $('#searchResults').show();
+                    return;
+                }
+
+                results.forEach(function(product) {
+                    // Tạo đường dẫn đầy đủ cho ảnh sản phẩm
+                    var imageUrl = product.imageUrl;
+                    if (!imageUrl.startsWith('http')) {
+                        imageUrl = '/images/products/' + imageUrl;
+                    }
+
+                    // Format giá tiền
+                    var formattedPrice = new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                    }).format(product.price);
+
+                    var discountedPriceHtml = '';
+                    if (product.discountedPrice < product.price) {
+                        var formattedDiscountedPrice = new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                        }).format(product.discountedPrice);
+                        discountedPriceHtml = `
+                            <p class="card-text mb-0">
+                                <span class="text-decoration-line-through text-muted">${formattedPrice}</span>
+                                <span class="text-danger fw-bold">${formattedDiscountedPrice}</span>
+                            </p>`;
+                    } else {
+                        discountedPriceHtml = `
+                            <p class="card-text mb-0">
+                                <span class="text-danger fw-bold">${formattedPrice}</span>
+                            </p>`;
+                    }
+
+                    container.append(`
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="${imageUrl}" 
+                                     class="card-img-top"
+                                     alt="${product.name}"
+                                     style="height: 200px; object-fit: contain;">
+                                <div class="card-body">
+                                    <h5 class="card-title">${product.name}</h5>
+                                    <p class="card-text text-muted">${product.categoryName || ''}</p>
+                                    ${discountedPriceHtml}
+                                    <a href="/Product/Details/${product.id}" 
+                                       class="btn btn-primary mt-2">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                $('#searchResults').show();
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .image-search-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+        .card-img-top {
+            padding: 1rem;
+            background: #fff;
+        }
+        .card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+}
